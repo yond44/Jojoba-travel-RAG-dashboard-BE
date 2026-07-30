@@ -16,6 +16,8 @@ from src.services.customer.customer import (
     getTopCustomers,
     getNewCustomersByDay,
     getRepeatCustomerRatio,
+    searchCustomers,
+    getChurnRiskList
 )
 
 
@@ -130,4 +132,17 @@ async def getRepeatCustomerRatioRoute(db: AsyncIOMotorDatabase = Depends(get_db)
         logger.exception("Unexpected error in getRepeatCustomerRatioRoute")
         raise HTTPException(status_code=500, detail="Internal server error")
 
+    return SuccessResponse(status=200, respond=data)
+
+
+@router.get("/search", response_model=SuccessResponse)
+async def search_customers(q: str, limit: int = 10, db=Depends(get_db)):
+    data = await searchCustomers(db, q, limit)
+    return SuccessResponse(status=200, respond=data)
+
+
+@router.get("/churn-risk", response_model=SuccessResponse)
+async def churn_risk_list(bucket: str | None = None, limit: int = 25,
+                          db=Depends(get_db)):
+    data = await getChurnRiskList(db, bucket, limit)
     return SuccessResponse(status=200, respond=data)

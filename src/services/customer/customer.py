@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 from datetime import datetime, timezone, timedelta, date
 from collections import defaultdict
 
@@ -11,8 +13,11 @@ from src.model.customer_schemas import (
     TopCustomer,
     NewCustomersByDay,
     RepeatCustomerRatio,
+    ChurnRiskCustomer,
+    CustomerSearchResult
 )
-
+MAX_SEARCH_LIMIT = 25
+MAX_RISK_LIMIT = 100
 
 def _to_range(start_date: date, end_date: date) -> tuple[datetime, datetime]:
     start_dt = datetime(start_date.year, start_date.month, start_date.day, tzinfo=timezone.utc)
@@ -135,3 +140,87 @@ async def getRepeatCustomerRatio(db) -> RepeatCustomerRatio:
         new_customer_count=total_new,
         repeat_rate=repeat_rate,
     )
+    
+    
+    
+# ---------- Pencarian pelanggan ----------
+async def searchCustomers(db, query: str, limit: int = 10) -> list[CustomerSearchResult]:
+    cleaned = (query or "").strip()
+    if len(cleaned) < 2:
+        return []
+ 
+    pattern = re.escape(cleaned)
+    cursor = db.customers.find(
+        {
+            "$or": [
+                {"name": {"$regex": pattern, "$options": "i"}},
+                {"customer_code": {"$regex": pattern, "$options": "i"}},
+            ]
+        },
+        {"name": 1, "customer_code": 1, "segment": 1, "total_spent_idr": 1,
+         "total_trips": 1},
+    ).limit(min(limit, MAX_SEARCH_LIMIT))
+ 
+    results: list[CustomerSearchResult] = []
+    async for doc in cursor:
+        results.append(
+            CustomerSearchResult(
+                customer_id=str(doc["_id"]),
+                customer_code=doc.get("customer_code", ""),
+                name=doc.get("name", ""),
+                segment=doc.get("segment", "Unknown"),
+                total_trips=doc.get("total_trips", 0),
+                total_spent_idr=doc.get("total_spent_idr", 0.0),
+            )
+        )
+    return results
+ 
+ 
+# ---------- Daftar pelanggan berisiko ----------
+async def getChurnRiskList(db, bucket: str | None = None,
+                           limit: int = 25) -> list[ChurnRiskCustomer]:
+    pipeline: list[dict] = []
+    if bucket:
+        pipeline.append({"$match": {"risk_bucket": bucket}})
+ 
+    pipeline.extend([
+        {"$sort": {"churn_proba": -1, "monetary_total": -1}},
+        {"$limit": min(limit, MAX_RISK_LIMIT)},
+        {"$addFields": {
+            "customer_object_id": {
+                "$convert": {
+                    "input": "$customer_id",
+                    "to": "objectId",
+                    "onError": None,
+                    "onNull": None,
+                }
+            }
+        }},
+        {"$lookup": {
+            "from": "customers",
+            "localField": "customer_object_id",
+            "foreignField": "_id",
+            "as": "profile",
+        }},
+        {"$unwind": {"path": "$profile", "preserveNullAndEmptyArrays": True}},
+    ])
+ 
+    results: list[ChurnRiskCustomer] = []
+    async for doc in db.ml_churn_scores.aggregate(pipeline):
+        profile = doc.get("profile") or {}
+        results.append(
+            ChurnRiskCustomer(
+                customer_id=str(doc.get("customer_id", "")),
+                customer_code=profile.get("customer_code", ""),
+                name=profile.get("name", "Tanpa nama"),
+                segment=profile.get("segment", "Unknown"),
+                churn_proba=float(doc.get("churn_proba", 0.0)),
+                risk_bucket=doc.get("risk_bucket", "Low"),
+                track=doc.get("track", "single"),
+                monetary_total=float(doc.get("monetary_total", 0.0)),
+                tenure_days=int(doc.get("tenure_days", 0)),
+                scored_at=str(doc.get("scored_at", "")),
+            )
+        )
+    return results
+ 

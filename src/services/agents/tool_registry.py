@@ -13,7 +13,7 @@ from src.services.campaign.campaign import (
 from src.services.customer.customer import (
     getAcquisitionChannelDistribution, getAgeGroupDistribution,
     getCityDistribution, getNewCustomersByDay, getRepeatCustomerRatio,
-    getSegmentDistribution, getTopCustomers)
+    getSegmentDistribution, getTopCustomers, searchCustomers, getChurnRiskList)
 from src.services.destination.destination import (
     getDestinationPopularityVsBookings, getRegionSummary)
 from src.services.package.package import getPackageTypeSummary, getTopPackages
@@ -203,6 +203,14 @@ TOOL_SPECS: tuple[ToolSpec, ...] = (
              "Ringkasan paket per tipe",
              getPackageTypeSummary,
              keywords=("ringkasan paket", "jenis paket")),
+    ToolSpec("customer_search",
+             "Cari pelanggan berdasarkan nama atau kode",
+             searchCustomers, frozenset({ToolArgument.LIMIT}),
+             ("cari pelanggan", "siapa pelanggan")),
+    ToolSpec("customer_churn_risk",
+             "Daftar pelanggan dengan risiko churn tertinggi beserta namanya",
+             getChurnRiskList, frozenset({ToolArgument.LIMIT}),
+             ("pelanggan berisiko", "siapa yang akan churn", "risiko tinggi")),
 )
 
 TOOLS_BY_ID: Dict[str, ToolSpec] = {spec.tool_id: spec for spec in TOOL_SPECS}

@@ -43,3 +43,24 @@ class RepeatCustomerRatio(BaseModel):
     repeat_customer_count: int
     new_customer_count: int
     repeat_rate: float
+    
+class CustomerSearchResult(BaseModel):
+    customer_id: str
+    customer_code: str
+    name: str
+    segment: str
+    total_trips: int
+    total_spent_idr: float
+
+
+class ChurnRiskCustomer(BaseModel):
+    customer_id: str
+    customer_code: str
+    name: str
+    segment: str
+    churn_proba: float
+    risk_bucket: str
+    track: str
+    monetary_total: float
+    tenure_days: int
+    scored_at: str
