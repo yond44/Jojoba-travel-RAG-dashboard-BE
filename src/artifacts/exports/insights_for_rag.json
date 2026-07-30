@@ -1,0 +1,27 @@
+[
+  {
+    "id": "revenue_forecast",
+    "topic": "forecast",
+    "text": "[Update: 16 July 2026] Proyeksi revenue Jojoba Travel 12 bulan ke depan Rp 2.84 triliun; bulan depan sekitar Rp 172 miliar. Model Ridge dengan fitur musiman, MAPE 9.5% pada uji out-of-time 6 bulan (mengalahkan seasonal naive)."
+  },
+  {
+    "id": "revenue_drivers",
+    "topic": "business",
+    "text": "[Update: 16 July 2026] Tiga destinasi penyumbang revenue terbesar: Jakarta, Labuan Bajo, Bromo. Cancellation rate rata-rata 8.1%; potensi revenue hilang dari cancel/refund Rp 623 miliar."
+  },
+  {
+    "id": "churn_overview",
+    "topic": "churn",
+    "text": "[Update: 16 July 2026] Model churn dua jalur (snapshot 2025-07-16, label perilaku 365 hari + ritme personal): AUC keseluruhan 0.777. Sekitar 88% populasi adalah single booker dengan churn rate 82% — prioritas program konversi ke repeat, bukan sekadar retensi."
+  },
+  {
+    "id": "segments",
+    "topic": "segment",
+    "text": "[Update: 16 July 2026] Segmentasi K-Means (k=5) atas RFM: cluster bernilai tertinggi berisi 2,359 customer dengan median belanja Rp 123 juta. Detail per cluster di customer_segments.csv."
+  },
+  {
+    "id": "campaign_note",
+    "topic": "marketing",
+    "text": "[Update: 16 July 2026] Tipe kampanye dengan biaya per konversi termurah: Loyalty Points (median CPA Rp 60 ribu). Catatan: ROI di database memakai atribusi longgar dan tidak layak dilaporkan mentah; gunakan CPA untuk perbandingan antar kampanye."
+  }
+]

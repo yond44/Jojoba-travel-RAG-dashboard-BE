@@ -1,0 +1,128 @@
+{
+  "bookings.booking_date": {
+    "parse_failed_to_nan": 0
+  },
+  "bookings.travel_date": {
+    "parse_failed_to_nan": 0
+  },
+  "bookings.return_date": {
+    "parse_failed_to_nan": 0
+  },
+  "bookings.created_at": {
+    "parse_failed_to_nan": 0
+  },
+  "bookings.pax_count": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "bookings.nights": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "bookings.base_price_idr": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "bookings.discount_idr": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "bookings.tax_idr": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "bookings.total_price_idr": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "bookings.status": {
+    "unknown_category": 0
+  },
+  "bookings.payment_status": {
+    "unknown_category": 0
+  },
+  "bookings.campaign_id": {
+    "organic_bookings": 51487
+  },
+  "bookings.duplicates": {
+    "duplicate_booking_code": 0
+  },
+  "bookings.consistency": {
+    "travel_before_booking": 0,
+    "return_before_travel": 0,
+    "nights_mismatch_fixed_from_dates": 0,
+    "price_identity_mismatch": 0
+  },
+  "customers.age": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "customers.join_date": {
+    "parse_failed_to_nan": 0
+  },
+  "customers.created_at": {
+    "parse_failed_to_nan": 0
+  },
+  "customers.segment": {
+    "unknown_category": 0
+  },
+  "customers.gender": {
+    "unknown_category": 0
+  },
+  "customers.duplicates": {
+    "duplicate_customer_code": 0,
+    "duplicate_email_reported_not_dropped": 11459
+  },
+  "reviews.rating": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "reviews.sentiment": {
+    "unknown_category": 0
+  },
+  "reviews.review_date": {
+    "parse_failed_to_nan": 0
+  },
+  "reviews.aspects_hotel": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "reviews.aspects_flight": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "reviews.aspects_guide": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "reviews.aspects_value_for_money": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "reviews.aspects_communication": {
+    "coerced_to_nan": 0,
+    "negative_to_nan": 0,
+    "out_of_domain_to_nan": 0
+  },
+  "transactions.amount_idr": {
+    "coerced_to_nan": 0
+  },
+  "transactions.consistency": {
+    "negative_but_not_refund": 0
+  },
+  "transactions.transaction_date": {
+    "parse_failed_to_nan": 0
+  }
+}

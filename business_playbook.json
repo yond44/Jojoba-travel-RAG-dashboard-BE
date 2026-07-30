@@ -1,0 +1,98 @@
+[
+  {
+    "id": "pb_budget_kampanye",
+    "topic": "campaign_strategy",
+    "source_type": "playbook",
+    "text": "Kebijakan alokasi anggaran kampanye: prioritaskan tipe kampanye dengan biaya per konversi (CPA) terendah. Berdasarkan data historis, Loyalty Points adalah yang paling efisien (CPA median Rp 60 ribu), disusul Instagram Ads (Rp 76 ribu) dan Google Ads (Rp 79 ribu). Influencer (Rp 107 ribu) dan WhatsApp Broadcast (Rp 117 ribu) berbiaya hampir dua kali lipat dari Loyalty Points — keduanya dievaluasi ulang setiap kuartal dan hanya dilanjutkan bila ada alasan strategis di luar konversi (misal brand awareness)."
+  },
+  {
+    "id": "pb_konversi_single_ke_repeat",
+    "topic": "retention_strategy",
+    "source_type": "playbook",
+    "text": "Prioritas pertumbuhan nomor satu perusahaan adalah konversi single booker menjadi repeat customer, karena sekitar 88% populasi pelanggan baru memesan satu kali dan tingkat churn jalur single sangat tinggi (~81%). Kebijakannya: setiap pelanggan yang menyelesaikan trip pertama masuk program follow-up otomatis — email pasca-trip berisi Loyalty Points untuk booking kedua (kanal ber-CPA termurah), dikirim dalam 30 hari setelah kepulangan, saat pengalaman liburan masih segar."
+  },
+  {
+    "id": "pb_retensi_very_high_bernilai",
+    "topic": "retention_strategy",
+    "source_type": "playbook",
+    "text": "Pelanggan bucket churn Very High (probabilitas >= 75%; churn aktual terbukti ~88%) TIDAK diperlakukan seragam — dipilah berdasarkan nilai. Very High dengan total belanja tinggi dan tenure panjang dihubungi personal oleh tim CS/agen dengan penawaran khusus (bukan diskon massal). Very High bernilai rendah cukup masuk email re-engagement otomatis. Prinsipnya: biaya retensi harus proporsional terhadap nilai pelanggan yang diselamatkan."
+  },
+  {
+    "id": "pb_retensi_medium_low",
+    "topic": "retention_strategy",
+    "source_type": "playbook",
+    "text": "Bucket Medium (churn aktual ~70%) ditangani kampanye email/loyalty otomatis tanpa sentuhan personal. Bucket Low (churn aktual ~2%) TIDAK diberi insentif retensi sama sekali — mereka akan kembali dengan sendirinya, dan memberi diskon kepada pelanggan yang toh akan booking hanya membakar margin. Sistem skor diperbarui harian, jadi daftar target kampanye selalu diambil dari skor terbaru, bukan daftar bulan lalu."
+  },
+  {
+    "id": "pb_segmen_premium",
+    "topic": "segmentation_strategy",
+    "source_type": "playbook",
+    "text": "Segmen premium (cluster dengan ~2.400 pelanggan, median belanja Rp 123 juta, frekuensi 3x) adalah kelompok paling bernilai dan diperlakukan berbeda: tidak pernah dikirimi diskon massal atau flash sale. Mereka membeli pengalaman, bukan harga — penawarannya berupa paket eksklusif, akses early-bird destinasi baru, dan layanan prioritas. Komunikasi lewat kanal personal (agen/CS), bukan broadcast."
+  },
+  {
+    "id": "pb_reaktivasi_dorman",
+    "topic": "segmentation_strategy",
+    "source_type": "playbook",
+    "text": "Dua cluster dorman (total ~36 ribu pelanggan single booker dengan recency 600+ hari) adalah kandidat kampanye reaktivasi murah: email berkala berisi inspirasi destinasi dan penawaran musiman, maksimal satu kali per bulan agar tidak dianggap spam. Ekspektasi konversi rendah dan itu diterima — biaya kanalnya nyaris nol. Jangan alokasikan kanal berbiaya tinggi (Influencer, WhatsApp) untuk segmen ini."
+  },
+  {
+    "id": "pb_nurture_single_baru",
+    "topic": "segmentation_strategy",
+    "source_type": "playbook",
+    "text": "Cluster single booker baru (~8 ribu pelanggan, recency median ~68 hari) adalah jendela emas konversi: mereka baru pulang liburan dan masih hangat. Kebijakan: masuk sekuens nurture 3 sentuhan dalam 90 hari pertama — ucapan terima kasih + permintaan review, penawaran Loyalty Points untuk trip kedua, lalu rekomendasi destinasi yang relevan dengan trip pertamanya. Setelah 90 hari tanpa respons, turunkan frekuensi ke ritme reaktivasi biasa."
+  },
+  {
+    "id": "pb_kalender_musiman",
+    "topic": "promotion_strategy",
+    "source_type": "playbook",
+    "text": "Kalender promosi mengikuti musiman revenue yang terbukti di data: puncak booking terjadi Juni-Juli (libur sekolah) dan Desember (Nataru). Kebijakannya: (1) kampanye early-bird dibuka 2-3 bulan sebelum puncak (Maret-April dan September-Oktober) untuk mengunci kursi lebih awal; (2) periode puncak TIDAK butuh diskon agresif — permintaan sudah tinggi, diskon hanya mengorbankan margin; (3) low season (Januari-Februari) diisi flash sale dan paket hemat untuk menjaga okupansi."
+  },
+  {
+    "id": "pb_kebijakan_diskon",
+    "topic": "promotion_strategy",
+    "source_type": "playbook",
+    "text": "Aturan umum diskon: diskon adalah alat untuk mengubah perilaku (mempercepat booking, mengisi low season, mengaktifkan yang dorman) — bukan hadiah untuk perilaku yang toh akan terjadi. Karena itu diskon TIDAK diberikan kepada: bucket churn Low, segmen premium, dan periode puncak musiman. Rentang diskon yang sehat mengikuti pola historis (median rasio diskon terhadap harga dasar di kisaran satu digit persen); di atas itu wajib persetujuan manajemen."
+  },
+  {
+    "id": "pb_pemakaian_skor_churn",
+    "topic": "ml_usage_policy",
+    "source_type": "playbook",
+    "text": "Panduan memakai skor churn: model punya dua jalur dengan akurasi berbeda — sangat presisi untuk repeat customer (AUC ~0.93) dan lebih kasar untuk single booker (AUC ~0.61). Karena itu untuk jalur single, skor TIDAK dipakai sendirian sebagai dasar keputusan; selalu digabung dengan nilai pelanggan (total belanja dan tenure) sebagai pemecah seri saat memprioritaskan target kampanye. Untuk repeat customer, skor bisa dipercaya langsung."
+  },
+  {
+    "id": "pb_pemakaian_forecast",
+    "topic": "ml_usage_policy",
+    "source_type": "playbook",
+    "text": "Panduan memakai angka forecast: proyeksi revenue selalu disampaikan beserta tingkat akurasinya (MAPE bulanan ~9,5%, mingguan ~7,2%, harian ~15,7% pada uji out-of-time) dan tidak pernah diperlakukan sebagai angka pasti. Untuk perencanaan anggaran, gunakan proyeksi bulanan (paling stabil); angka harian hanya untuk operasional jangka pendek. Keputusan besar (target tahunan, komitmen vendor) memakai proyeksi 12 bulan dengan buffer konservatif sebesar MAPE."
+  },
+  {
+    "id": "pb_review_negatif",
+    "topic": "service_quality",
+    "source_type": "playbook",
+    "text": "Review bernilai 1-2 (sentimen negatif) ditindaklanjuti CS dalam 48 jam: hubungi pelanggan, gali masalahnya, dan tawarkan pemulihan (bukan sekadar minta maaf). Pelanggan yang komplainnya tertangani baik justru berpeluang jadi loyal. Aspek dengan skor rendah berulang (misal value_for_money) dilaporkan bulanan ke tim produk sebagai sinyal perbaikan paket, bukan hanya masalah individual."
+  },
+  {
+    "id": "pb_permintaan_review",
+    "topic": "service_quality",
+    "source_type": "playbook",
+    "text": "Tingkat review pelanggan sudah sangat tinggi (~96% dari booking selesai memberi review, mayoritas positif) dan menjadi aset marketing. Kebijakannya: review positif rating 5 dimintakan izin untuk ditampilkan di materi promosi destinasi terkait, dan pelanggan yang memberi review diberi apresiasi kecil berupa poin loyalti — memperkuat siklus review sekaligus program konversi repeat."
+  },
+  {
+    "id": "pb_kinerja_agen",
+    "topic": "agent_management",
+    "source_type": "playbook",
+    "text": "Standar kinerja agen: median pencapaian target tahunan saat ini 89% dengan rating kepuasan 4,3 — agen di bawah 70% pencapaian selama dua kuartal berturut-turut masuk program pendampingan, bukan langsung penalti. Sekitar 76 dari 800 agen tercatat tidak aktif; daftar ini ditinjau per semester untuk keputusan reaktivasi atau penutupan akun, agar angka produktivitas jaringan tidak bias oleh akun mati."
+  },
+  {
+    "id": "pb_prioritas_kanal_akuisisi",
+    "topic": "acquisition_strategy",
+    "source_type": "playbook",
+    "text": "Akuisisi pelanggan baru mengikuti prinsip yang sama dengan kampanye: ikuti bukti biaya, bukan tren. Kanal dengan CPA rendah dan konversi stabil diprioritaskan dalam alokasi anggaran akuisisi; kanal mahal dipertahankan hanya dengan justifikasi non-konversi yang eksplisit. Review alokasi dilakukan per kuartal memakai data CPA terbaru dari sistem, bukan angka tahun lalu."
+  },
+  {
+    "id": "pb_eskalasi_keputusan",
+    "topic": "governance",
+    "source_type": "playbook",
+    "text": "Batas wewenang sistem: rekomendasi dari asisten AI (termasuk saran kampanye, diskon, dan retensi) bersifat masukan berbasis data dan playbook — keputusan final tetap di manajemen. Tindakan yang menyentuh pelanggan premium, diskon di atas rentang normal, atau perubahan kebijakan harga selalu memerlukan persetujuan manusia sebelum dieksekusi."
+  }
+]

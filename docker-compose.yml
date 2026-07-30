@@ -1,0 +1,72 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: jojoba-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8001}:8001"
+    env_file:
+      - .env
+    environment:
+      # Override MONGO_URL to point at the compose service name, not localhost,
+      # since "127.0.0.1" inside the app container is the container itself,
+      # not the mongo container. Everything else still comes from .env.
+      MONGO_URL: mongodb://mongo:27017
+    depends_on:
+      mongo:
+        condition: service_healthy
+    volumes:
+      # Dev convenience: reflect local code changes without rebuilding.
+      # Remove this in production images — bake the code in instead.
+      - ./src:/app/src
+    command:
+      [
+        "uvicorn", "src.main:app",
+        "--host", "0.0.0.0", "--port", "8001",
+        "--reload"
+      ]
+    networks:
+      - jojoba-net
+
+  mongo:
+    image: mongo:7
+    container_name: jojoba-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - jojoba-net
+
+  mongo-express:
+    image: mongo-express:1
+    container_name: jojoba-mongo-express
+    restart: unless-stopped
+    profiles: ["tools"]  # only starts with: docker compose --profile tools up
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_BASICAUTH_USERNAME: admin
+      ME_CONFIG_BASICAUTH_PASSWORD: admin
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - jojoba-net
+
+networks:
+  jojoba-net:
+    driver: bridge
+
+volumes:
+  mongo-data:
