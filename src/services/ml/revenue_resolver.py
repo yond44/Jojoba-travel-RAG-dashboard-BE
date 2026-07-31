@@ -12,6 +12,8 @@ VALID_STATUSES = ["Completed", "Confirmed"]
 DAILY_HORIZON_DAYS = 30
 WEEKLY_HORIZON_DAYS = 12 * 7
 
+GRANULARITY_FORMAT = {"daily": "%Y-%m-%d", "weekly": "%G-W%V",
+                      "monthly": "%Y-%m"}
 
 def _to_dt(d: date) -> datetime:
     return datetime.combine(d, time.min)
@@ -20,6 +22,28 @@ def _to_dt(d: date) -> datetime:
 # ---------------------------------------------------------------------------
 # AKTUAL
 # ---------------------------------------------------------------------------
+async def _actual_period_breakdown(database, start, end, granularity):
+    date_format = GRANULARITY_FORMAT.get(granularity, "%Y-%m")
+    rows = await database["bookings"].aggregate([
+        {"$match": {
+            "status": {"$in": VALID_STATUSES},
+            "payment_status": "Paid",
+            "booking_date": {
+                "$gte": datetime.combine(start, time.min),
+                "$lt": datetime.combine(end + timedelta(days=1), time.min)}}},
+        {"$group": {
+            "_id": {"$dateToString": {"format": date_format,
+                                      "date": "$booking_date"}},
+            "revenue_idr": {"$sum": "$total_price_idr"},
+            "booking_count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}},
+    ]).to_list(None)
+    return [{"period": row["_id"],
+             "revenue_idr": round(row["revenue_idr"], 2),
+             "booking_count": row["booking_count"]} for row in rows]
+
+
+
 async def _actual_total(db: AsyncIOMotorDatabase,
                         start: date, end: date) -> float:
     pipeline = [
@@ -35,16 +59,15 @@ async def _actual_total(db: AsyncIOMotorDatabase,
     return float(rows[0]["total"]) if rows else 0.0
 
 
-async def _actual_segment(db: AsyncIOMotorDatabase,
-                          start: date, end: date) -> dict:
-    """Fakta + insight terhitung: vs periode sebelumnya yang sama panjang
-    (momentum) dan vs periode sama tahun lalu (musiman)."""
+async def _actual_segment(db: AsyncIOMotorDatabase, start: date, end: date,
+                          granularity: str) -> dict:
     n_days = (end - start).days + 1
     total = await _actual_total(db, start, end)
     prev_total = await _actual_total(
         db, start - timedelta(days=n_days), start - timedelta(days=1))
     yoy_total = await _actual_total(
         db, start - timedelta(days=365), end - timedelta(days=365))
+    breakdown = await _actual_period_breakdown(db, start, end, granularity)
 
     def growth(now: float, base: float) -> float | None:
         return round((now - base) / base * 100, 1) if base > 0 else None
@@ -56,9 +79,9 @@ async def _actual_segment(db: AsyncIOMotorDatabase,
         "avg_daily_idr": round(total / n_days, 2),
         "vs_previous_period_pct": growth(total, prev_total),
         "vs_same_period_last_year_pct": growth(total, yoy_total),
+        "granularity_used": granularity,
+        "periods": breakdown,
     }
-
-
 # ---------------------------------------------------------------------------
 # FORECAST
 # ---------------------------------------------------------------------------
@@ -80,10 +103,6 @@ def _period_end(period_start: date, horizon: str) -> date:
 
 
 def _preferred_granularities(span_days: int) -> list[str]:
-    """Urutan preferensi granularitas untuk rentang ini. Berbentuk daftar
-    supaya sistem tetap hidup bila model daily BELUM dilatih (keputusan
-    yang sengaja dibuka): preferensi pertama kosong -> jatuh ke berikutnya,
-    dengan pro-rata menjaga jawabannya tetap masuk akal."""
     if span_days <= DAILY_HORIZON_DAYS:
         return ["daily", "weekly", "monthly"]
     if span_days <= WEEKLY_HORIZON_DAYS:
@@ -92,11 +111,14 @@ def _preferred_granularities(span_days: int) -> list[str]:
 
 
 async def _forecast_segment(db: AsyncIOMotorDatabase,
-                            start: date, end: date) -> dict:
+                            start: date, end: date, granularity: str) -> dict:
     span = (end - start).days + 1
 
+    candidates = [granularity] + [g for g in _preferred_granularities(span)
+                                  if g != granularity]
+
     docs, horizon = [], None
-    for candidate in _preferred_granularities(span):
+    for candidate in candidates:
         docs = await (db["ml_forecast_results"]
                       .find({"horizon": candidate})
                       .sort("period", 1).to_list(None))
@@ -151,27 +173,32 @@ async def _forecast_segment(db: AsyncIOMotorDatabase,
 # ---------------------------------------------------------------------------
 async def resolve_revenue(db: AsyncIOMotorDatabase,
                           start: date, end: date) -> dict:
-    """Hari INI masuk sisi forecast: harinya belum selesai, angka aktualnya
-    masih berubah — menyebutnya 'aktual' menyesatkan pemakai."""
     if start > end:
         raise ValueError(f"start ({start}) melewati end ({end}).")
 
     today = business_today()
     segments = []
 
+    total_span_days = (end - start).days + 1
+    granularity = ("daily" if total_span_days <= 30
+                   else "weekly" if total_span_days <= 84
+                   else "monthly")
+
     if start < today:
         segments.append(await _actual_segment(
-            db, start, min(end, today - timedelta(days=1))))
+            db, start, min(end, today - timedelta(days=1)), granularity))
     if end >= today:
-        segments.append(await _forecast_segment(db, max(start, today), end))
+        segments.append(await _forecast_segment(
+            db, max(start, today), end, granularity))
 
     result = {
-        "query": {"start": str(start), "end": str(end)},
+        "query": {"start": str(start), "end": str(end),
+                  "granularity": granularity},
         "resolved_at": datetime.now(timezone.utc).isoformat(),
         "segments": segments,
         "total_idr": round(sum(s["total_idr"] for s in segments), 2),
         "contains_forecast": any(s["kind"] == "forecast" for s in segments),
     }
-    logger.info("Revenue resolved %s..%s: %s", start, end,
+    logger.info("Revenue resolved %s..%s (%s): %s", start, end, granularity,
                 "+".join(s["kind"] for s in segments))
     return result

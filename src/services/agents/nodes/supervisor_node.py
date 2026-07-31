@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 
+from datetime import date
 from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import ValidationError
 
@@ -17,10 +18,21 @@ from src.utils.log import logger
 
 _JSON_BLOCK_PATTERN = re.compile(r"\{.*\}", re.DOTALL)
 
-# Berapa banyak pesan terakhir yang disodorkan sebagai riwayat.
+
+YEAR_PATTERN = re.compile(r"\b(20\d{2})\b")
+MONTH_NAMES = {
+    "januari": 1, "january": 1, "februari": 2, "february": 2,
+    "maret": 3, "march": 3, "april": 4, "mei": 5, "may": 5,
+    "juni": 6, "june": 6, "juli": 7, "july": 7, "agustus": 8, "august": 8,
+    "september": 9, "oktober": 10, "october": 10, "november": 11,
+    "desember": 12, "december": 12,
+}
+MONTH_LAST_DAY = {1: 31, 2: 28, 3: 31, 4: 30, 5: 31, 6: 30,
+                  7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
+
 HISTORY_MESSAGE_LIMIT = 6
 
-# Kata kunci jalur cadangan — dipakai HANYA bila LLM gagal.
+
 PREDICTION_KEYWORDS = ("prediksi", "proyeksi", "forecast", "revenue",
                        "churn", "risiko", "bulan depan", "minggu depan")
 INSIGHT_KEYWORDS = ("kenapa", "mengapa", "strategi", "sebaiknya",
@@ -30,6 +42,28 @@ FORECAST_KEYWORDS = ("proyeksi", "prediksi", "forecast", "ramalan",
                      "ke depan", "kedepan", "mendatang", "next week",
                      "next month", "upcoming")
 REVENUE_KEYWORDS = ("revenue", "pendapatan", "omzet", "penjualan", "income")
+
+
+def _fill_period_from_text(decision, question_lower):
+    if decision.params.start_date and decision.params.end_date:
+        return
+    years = sorted({int(match) for match in YEAR_PATTERN.findall(question_lower)})
+    if not years:
+        return
+    months = [number for name, number in MONTH_NAMES.items()
+              if name in question_lower]
+    if months and len(years) == 1:
+        first_month, last_month = min(months), max(months)
+        last_day = MONTH_LAST_DAY[last_month]
+        if last_month == 2 and years[0] % 4 == 0:
+            last_day = 29
+        decision.params.start_date = date(years[0], first_month, 1)
+        decision.params.end_date = date(years[0], last_month, last_day)
+    else:
+        decision.params.start_date = date(years[0], 1, 1)
+        decision.params.end_date = date(years[-1], 12, 31)
+    logger.info("Rentang diisi dari teks: %s s/d %s",
+                decision.params.start_date, decision.params.end_date)
 
 def _extract_json_object(raw_text: str) -> dict | None:
     """LLM sering membungkus JSON dengan basa-basi atau pagar markdown.
@@ -128,6 +162,7 @@ async def supervisor_node(state: AgentState) -> dict:
                              "segmentasi", "segment")
 
     question_lower = f"{question} {decision.standalone_question}".lower()
+    _fill_period_from_text(decision, question_lower)
     
     if (any(word in question_lower for word in FORECAST_KEYWORDS)
             and any(word in question_lower for word in REVENUE_KEYWORDS)):
@@ -144,7 +179,9 @@ async def supervisor_node(state: AgentState) -> dict:
         
     EXPLORATORY_KEYWORDS = ("tren", "trend", "sebaran", "distribusi",
                         "distribution", "komposisi", "pola", "eksplorasi",
-                        "kualitas data", "gambaran umum", "overview")
+                        "kualitas data", "gambaran umum", "overview",
+                        "bulanan", "per bulan", "monthly", "tabel", "table",
+                        "rincian", "breakdown", "mingguan", "per minggu")
 
     if (decision.intent in ("raw_fact", "insight")
             and any(word in question_lower

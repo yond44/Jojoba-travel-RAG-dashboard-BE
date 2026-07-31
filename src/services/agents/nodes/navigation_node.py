@@ -34,12 +34,11 @@ async def navigation_node(state: AgentState,
 
     if view_spec is None:
         logger.info("Tidak ada halaman yang cocok untuk permintaan navigasi")
-        tool_results["navigation"] = NavigationResult(
-            alternatives=[
-                NavigationOption(view_id=spec.view_id, label=spec.label,
-                                 dashboard_path=spec.dashboard_path)
-                for spec in VIEWS_BY_ID.values()][:5]
-        ).model_dump(mode="json")
+        tool_results["navigation"] = {
+                    "opened_page": None,
+                    "available_pages": [spec.label
+                                        for spec in list(VIEWS_BY_ID.values())[:5]],
+                }
         tools_used.append("navigate_dashboard")
         return {"tool_results": tool_results, "tools_used": tools_used,
                 "hop_count": next_hop_count}
@@ -72,7 +71,10 @@ async def navigation_node(state: AgentState,
                              dashboard_path=spec.dashboard_path)
             for spec in nearby_views(view_spec)])
 
-    tool_results["navigation"] = navigation_result.model_dump(mode="json")
+    tool_results["navigation"] = {
+        "opened_page": view_spec.label,
+        "period": query_params or None,
+    }
     tools_used.append("navigate_dashboard")
 
     # ---------- Data pendamping agar jawaban tidak hanya berupa tautan ----------

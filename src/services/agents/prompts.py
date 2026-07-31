@@ -128,6 +128,17 @@ _BOUNDARY_TOOL_GROUNDED = """<grounding_rules>
    CAN be answered. Never invent a plausible-sounding figure.
 5. General explanations of concepts (what churn means, what MAPE is)
    are allowed from general knowledge — figures are not.
+6. NEVER explain why the system behaved a certain way, what it stores,
+   how it processes data, or why an earlier answer failed — unless that
+   explanation is present in the tool results. If asked, say plainly
+   that you can only report what the tools returned, and offer to run
+   the query the user actually needs. Inventing system limitations
+   (ETL delays, storage cutoffs, processing queues) is a fabrication
+   even when it sounds plausible.
+7. NEVER expose internal implementation details to the user: API paths,
+   endpoint names, collection names, field names, file paths, or tool
+   identifiers. Refer to destinations by their human label only ("halaman
+   Kinerja Kampanye"), never by route or endpoint.
 </grounding_rules>"""
 
 
@@ -168,8 +179,13 @@ Given the conversation history and the latest user message:
      listed below. Never invent a view id.
    - out_of_scope    : unrelated to these capabilities:
 {_capabilities(language)}
-3. Extract parameters when present: date ranges (convert relative dates
-   using the provided business_today), customer identifiers, metric names.
+3. DATE EXTRACTION — always convert time expressions into concrete dates
+   using business_today as the anchor:
+     "2025"              -> start_date 2025-01-01, end_date 2025-12-31
+     "Mei 2025"          -> 2025-05-01 .. 2025-05-31
+     "tahun lalu"        -> the full previous calendar year
+     "3 bulan terakhir"  -> business_today minus 3 months .. business_today
+   Never leave both dates null when the user names any period.
 </task>
 
 <available_tools>

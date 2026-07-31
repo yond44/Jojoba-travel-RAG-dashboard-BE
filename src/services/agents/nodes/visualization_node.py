@@ -13,7 +13,25 @@ from src.utils.log import logger
 MAX_POINTS_PER_SERIES = 60
 
 
-def _spec_from_revenue(revenue_result: Dict[str, Any]) -> Optional[ChartSpec]:
+
+def _normalize_period_label(raw_label: Any, granularity: str) -> str:
+    text = str(raw_label)
+    if granularity == "monthly" and len(text) >= 7:
+        return text[:7]
+    return text
+
+def _period_point(item: Dict[str, Any], granularity: str) -> Optional[ChartPoint]:
+    label = item.get("period") or item.get("period_start")
+    value = item.get("revenue_idr")
+    if value is None:
+        value = item.get("forecast_idr")
+    if label is None or value is None:
+        return None
+    return ChartPoint(x_value=_normalize_period_label(label, granularity),
+                      y_value=float(value))
+
+
+def _spec_from_revenue(revenue_result: Dict[str, Any], granularity: str) -> Optional[ChartSpec]:
     segments = revenue_result.get("segments") or []
     if not segments:
         return None
@@ -22,15 +40,17 @@ def _spec_from_revenue(revenue_result: Dict[str, Any]) -> Optional[ChartSpec]:
     mape_note = None
 
     for segment in segments:
+        granularity = segment.get("granularity_used", "monthly")
         breakdown = segment.get("periods") or []
-        if breakdown:
-            points = [ChartPoint(x_value=item["period_start"],
-                                 y_value=float(item["forecast_idr"]))
-                      for item in breakdown[:MAX_POINTS_PER_SERIES]]
-        else:
-            points = [ChartPoint(x_value=f"{segment['start']} s/d "
-                                         f"{segment['end']}",
-                                 y_value=float(segment["total_idr"]))]
+        points = [point for point in
+                  (_period_point(item, granularity)
+                   for item in breakdown[:MAX_POINTS_PER_SERIES])
+                  if point is not None]
+
+        if not points:
+            points = [ChartPoint(
+                x_value=f"{segment['start']} s/d {segment['end']}",
+                y_value=float(segment["total_idr"]))]
 
         is_forecast = segment["kind"] == "forecast"
         series_list.append(ChartSeries(
@@ -44,7 +64,6 @@ def _spec_from_revenue(revenue_result: Dict[str, Any]) -> Optional[ChartSpec]:
     return ChartSpec(chart_type="line", title="Revenue: aktual vs proyeksi",
                      x_label="Periode", y_label="Revenue (IDR)",
                      series=series_list, note=mape_note)
-
 
 def _spec_from_facts(facts: Dict[str, Any]) -> Optional[ChartSpec]:
     channel_rows = facts.get("channel_performance")

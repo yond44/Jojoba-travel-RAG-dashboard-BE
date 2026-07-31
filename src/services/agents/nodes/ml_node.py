@@ -49,7 +49,7 @@ async def ml_inference_node(state: AgentState,
         end_date = get_date_param(params, "end_date", today)
         try:
             revenue_result = await resolve_revenue(database,
-                                                   start_date, end_date)
+                                                   start_date, end_date,)
             tool_results["revenue"] = revenue_result
             tools_used.append("resolve_revenue")
             contains_forecast = revenue_result.get("contains_forecast", False)
