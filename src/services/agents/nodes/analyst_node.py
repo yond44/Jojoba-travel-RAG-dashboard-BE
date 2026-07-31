@@ -18,6 +18,17 @@ COMPARISON_KEYWORDS = ("bandingkan", "dibanding", "dibandingkan", "perbandingan"
                        "growth", "naik atau turun", "lebih tinggi",
                        "lebih rendah")
 
+TOP_N_PATTERN = re.compile(r"\btop\s*(\d{1,2})\b|\b(\d{1,2})\s*(?:teratas|terbaik|terpopuler|terlaris)\b")
+DEFAULT_TOP_N = 5
+MAX_TOP_N = 25
+
+
+def _requested_top_n(question_lower: str) -> int:
+    match = TOP_N_PATTERN.search(question_lower)
+    if not match:
+        return DEFAULT_TOP_N
+    value = int(match.group(1) or match.group(2))
+    return min(max(value, 1), MAX_TOP_N)
 
 # ---------- Agregasi ----------
 async def _revenue_total(database, start_date, end_date) -> float:
@@ -95,11 +106,17 @@ async def _top_destinations(database, start_date, end_date, limit=5) -> list:
 
 
 # ---------- Pemilihan agregasi ----------
-async def _collect_facts(database, question_lower: str, start_date: date,
-                         end_date: date) -> Dict[str, Any]:
+async def _collect_facts(database, question_lower, start_date, 
+                         end_date, top_n=DEFAULT_TOP_N) -> Dict[str, Any]:
     facts: Dict[str, Any] = {
         "period": {"start": str(start_date), "end": str(end_date)}}
 
+    
+    if any(word in question_lower for word in
+           ("customer", "pelanggan", "pembeli", "top spender")):
+        facts["top_customers"] = await _top_customers(
+            database, start_date, end_date, top_n)
+        
     if any(word in question_lower for word in
            ("revenue", "pendapatan", "omzet", "penjualan", "income", "sales")):
         facts["revenue_idr"] = await _revenue_total(
@@ -121,8 +138,7 @@ async def _collect_facts(database, question_lower: str, start_date: date,
 
     if any(word in question_lower for word in
            ("destinasi", "destination", "tujuan", "paket")):
-        facts["top_destinations"] = await _top_destinations(
-            database, start_date, end_date)
+        facts["top_destinations"] = await _top_destinations(database, start_date, end_date, top_n)
 
     if len(facts) == 1:
         facts["booking_count"] = await _count_bookings(
@@ -132,6 +148,28 @@ async def _collect_facts(database, question_lower: str, start_date: date,
 
     return facts
 
+
+async def _top_customers(database, start_date, end_date, limit) -> list:
+    rows = await database["bookings"].aggregate([
+        {"$match": {
+            "status": {"$in": VALID_BOOKING_STATUSES},
+            "payment_status": "Paid",
+            "booking_date": {
+                "$gte": datetime.combine(start_date, time.min),
+                "$lt": datetime.combine(end_date + timedelta(days=1),
+                                        time.min)}}},
+        {"$group": {"_id": "$customer_id",
+                    "customer_name": {"$first": "$customer_name"},
+                    "segment": {"$first": "$customer_segment"},
+                    "total_spent_idr": {"$sum": "$total_price_idr"},
+                    "booking_count": {"$sum": 1}}},
+        {"$sort": {"total_spent_idr": -1}},
+        {"$limit": limit},
+    ]).to_list(None)
+    return [{"customer_name": row["customer_name"],
+             "segment": row["segment"],
+             "total_spent_idr": row["total_spent_idr"],
+             "booking_count": row["booking_count"]} for row in rows]
 
 # ---------- Periode pembanding ----------
 def _previous_period(start_date: date, end_date: date) -> tuple[date, date]:
@@ -175,6 +213,7 @@ async def analyst_node(state: AgentState, config: RunnableConfig) -> dict:
     tool_results = dict(state.get("tool_results", {}))
     tools_used = list(state.get("tools_used", []))
     next_hop_count = state.get("hop_count", 0) + 1
+    top_n = _requested_top_n(question_lower)
 
     if database is None:
         return {"error_message": "Koneksi database tidak tersedia",
@@ -194,7 +233,7 @@ async def analyst_node(state: AgentState, config: RunnableConfig) -> dict:
     elif end_date > today:
         end_date = today
 
-    facts = await _collect_facts(database, question_lower, start_date, end_date)
+    facts = await _collect_facts(database, question_lower, start_date, end_date, top_n)
     tool_results["facts"] = facts
     tools_used.append("query_database")
 
@@ -203,7 +242,7 @@ async def analyst_node(state: AgentState, config: RunnableConfig) -> dict:
     if wants_comparison:
         previous_start, previous_end = _previous_period(start_date, end_date)
         previous_facts = await _collect_facts(
-            database, question_lower, previous_start, previous_end)
+            database, question_lower, previous_start, previous_end, top_n)
         tool_results["facts_previous_period"] = previous_facts
         tool_results["comparison"] = _build_comparison(facts, previous_facts)
         tools_used.append("query_database_previous_period")

@@ -31,7 +31,7 @@ def _period_point(item: Dict[str, Any], granularity: str) -> Optional[ChartPoint
                       y_value=float(value))
 
 
-def _spec_from_revenue(revenue_result: Dict[str, Any], granularity: str) -> Optional[ChartSpec]:
+def _spec_from_revenue(revenue_result: Dict[str, Any]) -> Optional[ChartSpec]:
     segments = revenue_result.get("segments") or []
     if not segments:
         return None
@@ -64,7 +64,7 @@ def _spec_from_revenue(revenue_result: Dict[str, Any], granularity: str) -> Opti
     return ChartSpec(chart_type="line", title="Revenue: aktual vs proyeksi",
                      x_label="Periode", y_label="Revenue (IDR)",
                      series=series_list, note=mape_note)
-
+    
 def _spec_from_facts(facts: Dict[str, Any]) -> Optional[ChartSpec]:
     channel_rows = facts.get("channel_performance")
     if channel_rows:

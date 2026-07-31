@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import timedelta
 
 from langchain_core.runnables import RunnableConfig
@@ -14,6 +15,21 @@ from src.utils.log import logger
 
 DEFAULT_LOOKBACK_DAYS = 30
 
+CHURN_KEYWORDS = ("churn", "risiko", "berisiko", "retensi", "akan pergi")
+NAME_PATTERN = re.compile(
+    r"(?:bernama|nama(?:nya)?|customer|pelanggan)\s+([A-Z][a-zA-Z']+(?:\s+[A-Z][a-zA-Z']+)?)")
+MAX_NAME_MATCHES = 10
+
+
+async def _resolve_customer_ids_by_name(database, question: str,
+                                        limit: int) -> list[str]:
+    match = NAME_PATTERN.search(question)
+    if not match:
+        return []
+    rows = await database["customers"].find(
+        {"name": {"$regex": re.escape(match.group(1)), "$options": "i"}},
+        {"_id": 1}).limit(limit).to_list(None)
+    return [str(row["_id"]) for row in rows]
 
 async def ml_inference_node(state: AgentState,
                             config: RunnableConfig) -> dict:
@@ -28,6 +44,13 @@ async def ml_inference_node(state: AgentState,
                 "hop_count": state.get("hop_count", 0) + 1}
 
     customer_ids = params.get("customer_ids") or []
+    question = f"{state.get('original_question', '')} " \
+               f"{state.get('standalone_question', '')}"
+    asks_about_churn = any(word in question.lower() for word in CHURN_KEYWORDS)
+    
+    if not customer_ids and asks_about_churn:
+        customer_ids = await _resolve_customer_ids_by_name(
+            database, question, MAX_NAME_MATCHES)
 
     if customer_ids:
         try:
@@ -39,8 +62,14 @@ async def ml_inference_node(state: AgentState,
             logger.info("Churn tidak bisa dihitung: %s", error)
             tool_results["churn"] = {"not_found": str(error)}
             tools_used.append("predict_churn")
-
-
+    elif asks_about_churn:
+        tool_results["churn"] = {
+            "unavailable": "Pertanyaan menyangkut churn tetapi tidak ada "
+                           "pelanggan yang bisa diidentifikasi dari "
+                           "pertanyaan. Minta pengguna menyebut nama atau "
+                           "kode pelanggan, atau arahkan ke halaman Risiko "
+                           "Churn untuk daftar pelanggan berisiko."}
+        tools_used.append("predict_churn")
     else:
         today = business_today()
         start_date = get_date_param(
