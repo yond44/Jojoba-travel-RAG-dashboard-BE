@@ -25,38 +25,6 @@ services:
     volumes:
       - chroma-data:/app/data/chroma_db
     entrypoint: ["python"]
-    command: ["-m", "jobs.reindex_rag"]
-    networks:
-      - jojoba-net
-
-  web:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: jojoba-web
-    restart: unless-stopped
-    ports:
-      - "${WEB_PORT:-5173}:80"
-    depends_on:
-      - api
-    networks:
-      - jojoba-net
-
-  mongo:
-    image: mongo:7
-    container_name: jojoba-mongo
-    profiles: ["local-db"]
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
     networks:
       - jojoba-net
 
@@ -65,5 +33,4 @@ networks:
     driver: bridge
 
 volumes:
-  mongo-data:
   chroma-data:
