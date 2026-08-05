@@ -77,11 +77,16 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in ENV_SETTINGS.cors_origins_raw.split(",")],
+    allow_origins=[
+        "https://jojobadashboard.vercel.app",
+        "https://www.jojobadashboard.vercel.app",
+        "http://localhost:5173"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 app.add_middleware(
     RequestGuardMiddleware,
