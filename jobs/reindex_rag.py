@@ -1,21 +1,3 @@
-"""
-jobs/reindex_rag.py
-
-Menyinkronkan index vektor ChromaDB dengan collection sumber di MongoDB
-(ml_insights + business_knowledge).
-
-Kapan dijalankan:
-  - setelah jobs/retrain_forecast atau jobs/retrain_churn (chunk insight
-    diperbarui dengan angka baru)
-  - setelah jobs/seed_playbook (kebijakan bisnis diedit)
-
-    python -m jobs.reindex_rag
-    python -m jobs.reindex_rag --force-delete   # izinkan pemangkasan masif
-
-Cron (mengikuti irama retrain forecast, beberapa menit setelahnya):
-    15 2 * * 1  cd /path/proyek && .venv/bin/python -m jobs.reindex_rag
-"""
-
 from __future__ import annotations
 
 import argparse
